@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import api from "../api/client";
 import Navbar from "../components/Navbar";
 
+type Project = {
+  id: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+};
+
 export default function Projects() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
 
   const fetchProjects = async () => {
     const res = await api.get("/projects");
@@ -12,8 +22,10 @@ export default function Projects() {
   };
 
   const createProject = async () => {
-    await api.post("/projects", { name });
+    if (!name.trim()) return;
+    await api.post("/projects", { name, description });
     setName("");
+    setDescription("");
     fetchProjects();
   };
 
@@ -22,18 +34,72 @@ export default function Projects() {
   }, []);
 
   return (
-    <div>
+    <main className="page-shell">
       <Navbar />
-      <h2>Projects</h2>
 
-      <input value={name} onChange={e => setName(e.target.value)} />
-      <button onClick={createProject}>Create</button>
-
-      {projects.map(p => (
-        <div key={p.id}>
-          <a href={`/projects/${p.id}`}>{p.name}</a>
+      <motion.section
+        className="section-card glass-card"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="section-head">
+          <h2>Your Projects</h2>
+          <span className="status-pill">{projects.length} total</span>
         </div>
-      ))}
-    </div>
+
+        <div className="inline-form" style={{ marginBottom: 10 }}>
+          <input
+            className="text-input"
+            value={name}
+            placeholder="Project name"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <button className="primary-btn" onClick={createProject}>
+            Create
+          </button>
+        </div>
+
+        <input
+          className="text-input"
+          value={description}
+          placeholder="Short description (optional)"
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </motion.section>
+
+      <motion.section
+        className="section-card glass-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, delay: 0.08 }}
+      >
+        <div className="section-head">
+          <h2>Project Board</h2>
+        </div>
+
+        {projects.length === 0 ? (
+          <p className="empty-note">No projects yet. Create your first project to get started.</p>
+        ) : (
+          <div className="cards-grid">
+            {projects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+              >
+                <Link to={`/projects/${project.id}`} className="project-card">
+                <h3 className="project-card-title">{project.name}</h3>
+                <p className="project-meta">
+                  {project.description?.trim() || "No description added yet"}
+                </p>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.section>
+    </main>
   );
 }
