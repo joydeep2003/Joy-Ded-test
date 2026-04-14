@@ -9,6 +9,7 @@ DEMO_EMAIL = "test@example.com"
 DEMO_PASSWORD = "password123"
 DEMO_NAME = "Test User"
 DEMO_PROJECT = "Sample Project"
+DEMO_PROJECT_DESCRIPTION = "Demo project with seeded tasks"
 
 
 def seed() -> None:
@@ -36,7 +37,7 @@ def seed() -> None:
         if not project:
             project = Project(
                 name=DEMO_PROJECT,
-                description="Test project",
+                description=DEMO_PROJECT_DESCRIPTION,
                 owner_id=user.id,
             )
             db.add(project)
@@ -48,10 +49,10 @@ def seed() -> None:
             for (title,) in db.query(Task.title).filter(Task.project_id == project.id).all()
         }
 
-        for title, status, priority in [
-            ("Task 1", "todo", "low"),
-            ("Task 2", "in_progress", "medium"),
-            ("Task 3", "done", "high"),
+        for title, task_description, status, priority in [
+            ("Task 1", "Seeded task in todo state", "todo", "low"),
+            ("Task 2", "Seeded task in progress", "in_progress", "medium"),
+            ("Task 3", "Seeded completed task", "done", "high"),
         ]:
             if title in existing_titles:
                 continue
@@ -59,6 +60,7 @@ def seed() -> None:
             db.add(
                 Task(
                     title=title,
+                    description=task_description,
                     status=status,
                     priority=priority,
                     project_id=project.id,

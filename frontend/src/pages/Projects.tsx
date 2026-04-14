@@ -15,6 +15,9 @@ export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const fetchProjects = async () => {
     const res = await api.get("/projects");
@@ -26,6 +29,36 @@ export default function Projects() {
     await api.post("/projects", { name, description });
     setName("");
     setDescription("");
+    fetchProjects();
+  };
+
+  const startEditProject = (project: Project) => {
+    setEditingProjectId(project.id);
+    setEditName(project.name || "");
+    setEditDescription(project.description || "");
+  };
+
+  const cancelEditProject = () => {
+    setEditingProjectId(null);
+    setEditName("");
+    setEditDescription("");
+  };
+
+  const saveProject = async () => {
+    if (!editingProjectId || !editName.trim()) return;
+    await api.patch(`/projects/${editingProjectId}`, {
+      name: editName,
+      description: editDescription,
+    });
+    cancelEditProject();
+    fetchProjects();
+  };
+
+  const deleteProject = async (projectId: string) => {
+    await api.delete(`/projects/${projectId}`);
+    if (editingProjectId === projectId) {
+      cancelEditProject();
+    }
     fetchProjects();
   };
 
@@ -89,12 +122,57 @@ export default function Projects() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.06 }}
               >
-                <Link to={`/projects/${project.id}`} className="project-card">
-                <h3 className="project-card-title">{project.name}</h3>
-                <p className="project-meta">
-                  {project.description?.trim() || "No description added yet"}
-                </p>
-                </Link>
+                <div className="project-card">
+                  {editingProjectId === project.id ? (
+                    <>
+                      <input
+                        className="text-input"
+                        value={editName}
+                        placeholder="Project name"
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                      <input
+                        className="text-input"
+                        value={editDescription}
+                        placeholder="Project description"
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        style={{ marginTop: 8 }}
+                      />
+                      <div className="inline-form" style={{ marginTop: 10 }}>
+                        <button className="secondary-btn" onClick={saveProject}>
+                          Save
+                        </button>
+                        <button className="secondary-btn" onClick={cancelEditProject}>
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="project-card-title">{project.name}</h3>
+                      <p className="project-meta">
+                        {project.description?.trim() || "No description added yet"}
+                      </p>
+                      <div className="inline-form" style={{ marginTop: 10 }}>
+                        <Link to={`/projects/${project.id}`} className="secondary-btn">
+                          Open
+                        </Link>
+                        <button
+                          className="secondary-btn"
+                          onClick={() => startEditProject(project)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="secondary-btn"
+                          onClick={() => deleteProject(project.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>

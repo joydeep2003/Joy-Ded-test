@@ -46,3 +46,40 @@ def create_project(data: dict, user=Depends(get_current_user), db: Session = Dep
     db.commit()
     db.refresh(project)  # ✅ important
     return project
+
+
+@router.patch("/{project_id}")
+def update_project(project_id: str, data: dict, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == user["user_id"])
+        .first()
+    )
+
+    if not project:
+        raise HTTPException(status_code=404, detail={"error": "not found"})
+
+    for field in ["name", "description"]:
+        if field in data:
+            setattr(project, field, data[field])
+
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@router.delete("/{project_id}")
+def delete_project(project_id: str, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == user["user_id"])
+        .first()
+    )
+
+    if not project:
+        raise HTTPException(status_code=404, detail={"error": "not found"})
+
+    db.query(Task).filter(Task.project_id == project.id).delete()
+    db.delete(project)
+    db.commit()
+    return {"success": True}
